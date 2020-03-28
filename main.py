@@ -9,71 +9,53 @@ class Sorter:
         self.input = input
         self.inputProperties = properties
         self.expectedArray = []
-        self.sortedArray = []
 
     def copy_input(self, index):
         return [self.input[index][i] for i in range(len(self.input[index]))]
 
-    def verify_if_sorted(self):
-        if len(self.expectedArray) != len(self.sortedArray):
+    def verify_if_sorted(self, array):
+        if len(array) != len(self.expectedArray):
             return "numarul de elemente nu este acelasi"
         else:
-            for i in range(len(self.expectedArray)):
-                if self.expectedArray[i] != self.sortedArray[i]:
+            for i in range(len(array)):
+                if array[i] != self.expectedArray[i]:
                     return "sortarea nu este corecta"
             return "sortarea este corecta"
 
-    def expected_sort(self, index):
-        self.expectedArray = self.copy_input(index)
+    def expected_sort(self, array):
 
-        print(self.expectedArray)
         tstart = time.perf_counter_ns()
-        self.expectedArray = sorted(self.expectedArray)
+        array = sorted(array)
         tend = time.perf_counter_ns()
-        #print(self.expectedArray)
+
         print("Native sort done in", float((tend - tstart) / 1000000), "miliseconds")
+        self.expectedArray = array
+
+        return array
 
     def bubble_sort(self, array):
-        self.sortedArray = array
-
         tstart = time.perf_counter_ns()
-        for i in range(len(self.sortedArray)):
-            for j in range(i, len(self.sortedArray)):
-                if self.sortedArray[i] > self.sortedArray[j]:
-                    self.sortedArray[i], self.sortedArray[j] = self.sortedArray[j], self.sortedArray[i]
+
+        for i in range(len(array)):
+            for j in range(i, len(array)):
+                if array[i] > array[j]:
+                    array[i], array[j] = array[j], array[i]
+
         tend = time.perf_counter_ns()
         return array
 
         #print("Bubble sort done in:", float((tend - tstart) / 1000000), "miliseconds")
 
-    def count_sort(self, index):
-        self.sortedArray = self.copy_input(index)
-        #print(self.sortedArray)
-        maximNum = self.inputProperties[index][1]
-        #length = self.inputProperties[index][0]
+    def count_sort(self, array, index=-1):
+
+        if index == -1:
+            maximNum = max(array)
+        else:
+            maximNum = self.inputProperties[index][1]
 
         frequency = [0 for i in range(maximNum + 1)]
-        #sortedArrayCopy = [0 for i in range(length)]
 
         tstart = time.perf_counter_ns()
-
-        for elem in self.sortedArray:
-            frequency[elem] += 1
-
-        counter = 0
-        for i in range(maximNum + 1):
-            while frequency[i]:
-                self.sortedArray[counter] = i
-                counter += 1
-                frequency[i] -= 1
-
-        tend = time.perf_counter_ns()
-        print("Count sort done in:", float((tend - tstart) / 1000000), "miliseconds")
-
-    def radix_count_sort(self, array):
-
-        maximNum = max(array)
-        frequency = [0 for i in range(maximNum + 1)]
 
         for elem in array:
             frequency[elem] += 1
@@ -85,62 +67,67 @@ class Sorter:
                 counter += 1
                 frequency[i] -= 1
 
+        tend = time.perf_counter_ns()
+        print("Count sort done in:", float((tend - tstart) / 1000000), "miliseconds")
+        return array
 
-    def get_digit_number(self, n):
+    def get_digit_number(self, n, base=10):
         cnt = 0
-        while n:
-            n //= 10
-            cnt += 1
+        if (base & (base-1)) == 0: #base is a power of two
+            while n:
+                n = n >> base
+                cnt += 1
+        else:
+            while n:
+                n //= base
+                cnt += 1
         return cnt
 
-    def get_digit(self, value, n):
-        cutter = 10 ** n
-        value = (value % (cutter * 10)) // cutter
+    def get_digit(self, value, n, base=10):
+        cutter = base ** n
+        value = (value % (cutter * base)) // cutter
         return value
 
-    def radix_sort(self, index):
-        self.sortedArray = self.copy_input(index)
+    def radix_sort(self, array, index=0, base=10):
         maximNum = self.inputProperties[index][1]
-        maxLen = self.get_digit_number(maximNum)
+        maxLen = self.get_digit_number(maximNum, base)
 
         tstart = time.perf_counter_ns()
 
         # create buckets
 
         for i in range(maxLen):
-            buckets = [[] for j in range(10)]
+            buckets = [[] for j in range(base)]
 
-            for elem in self.sortedArray:
-                buckets[self.get_digit(elem, i)].append(elem)
+            for elem in array:
+                buckets[self.get_digit(elem, i, base)].append(elem)
 
             for bucket in buckets:
-                if bucket:
-                    self.radix_count_sort(bucket)
+                if bucket != []:
+                    self.count_sort(bucket)
 
             counter = 0
             for bucket in buckets:
                 for j in range(len(bucket)):
-                    self.sortedArray[counter] = bucket[j]
+                    array[counter] = bucket[j]
                     counter += 1
 
         tend = time.perf_counter_ns()
         print("Radix sort done in:", float((tend - tstart) / 1000000), "miliseconds")
+        return array
 
-    def merge_sort(self, index):
-        self.sortedArray = self.copy_input(index)
-        arrayLen = self.inputProperties[index][0]
+    def merge_sort(self, array):
 
         tstart = time.perf_counter_ns()
-        #print(self.sortedArray)
-        self.merge_sort_recursion(self.sortedArray)
+        self.merge_sort_recursion(array)
         tend = time.perf_counter_ns()
-        #print(self.sortedArray)
+
         print("Merge sort done in:", float((tend - tstart) / 1000000), "miliseconds")
+        return array
 
     def merge_sort_recursion(self, array):
 
         length = len(array)
-
         if length > 1:
             mid = length // 2
 
@@ -204,8 +191,23 @@ class Sorter:
 
             return self.median(med, 0, len(med) - 1)
     """
+
+    def pivot_choose(self, array, start, end):
+
+        poz1, poz2, poz3 = randint(start, end), randint(start, end), randint(start, end)
+        val1, val2, val3 = array[poz1], array[poz2], array[poz3]
+
+        if (val1 <= val2 <= val3) or (val3 <= val2 <= val1):
+            return val2
+        elif (val1 <= val3 <= val2) or (val2 <= val3 <= val1):
+            return val3
+        elif (val2 <= val1 <= val3) or (val3 <= val1 <= val2):
+            return val1
+
+    """
     def partition(self, array, start, end):
-        #pivot = self.median(array, start, end)
+
+        pivot = self.pivot_choose(array, start, end)
 
         low = start
         high = end - 1
@@ -221,9 +223,32 @@ class Sorter:
                 low = low + 1
 
             array[low], array[high] = array[high], array[low]
+            print(pivot, array, low, high)
 
             #print(pivot, array, low, high)
         return high
+    """""
+
+    def partition(self, array, start, end):
+        p = self.pivot_choose(array, start, end)
+
+        low = start - 1
+        high = end + 1
+
+        while 1:
+            low += 1
+            while array[low] < p:
+                low += 1
+
+            high -= 1
+            while array[high] > p:
+                high -= 1
+
+            if low < high:
+                array[low], array[high] = array[high], array[low]
+            else:
+                return high
+
 
     def quick_sort_recursion(self, array, start, end):
         if start < end:
@@ -231,15 +256,18 @@ class Sorter:
             self.quick_sort_recursion(array, start, p)
             self.quick_sort_recursion(array, p + 1, end)
 
-    def quick_sort(self, index):
-        self.sortedArray = self.copy_input(index)
-        length = self.inputProperties[index][0]
-        print(self.sortedArray)
+    def quick_sort(self, array, index=-1):
+        if index == -1:
+            length = len(array)
+        else:
+            length = self.inputProperties[index][0] - 1
+
         tstart = time.perf_counter_ns()
-        self.quick_sort_recursion(self.sortedArray, 0, length)
-        print(self.sortedArray)
+        self.quick_sort_recursion(array, 0, length)
         tend = time.perf_counter_ns()
+
         print("Quick sort done in:", float((tend - tstart) / 1000000), "miliseconds")
+        return array
 
 class Reader:
     def __init__(self):
@@ -269,7 +297,7 @@ class Reader:
                 #adaugarea propietatilor testului
                 self.propertiesObject.append(pair)
 
-                rndValue = 0#randint(0, 100) % 3
+                rndValue = randint(0, 100) % 3
 
                 if rndValue == 0:
                     self.create_input(pair[0], pair[1])
@@ -312,29 +340,30 @@ readerObject.add_input_test("input.txt")
 
 inputObj = readerObject.get_input()
 propObj = readerObject.get_input_properties()
+numberOfTests = readerObject.get_test_number()
 
 sorterObject = Sorter(inputObj, propObj)
-sorterObject.expected_sort(0)
 
-sorterObject.count_sort(0)
-print(sorterObject.verify_if_sorted())
 
-sorterObject.merge_sort(0)
-print(sorterObject.verify_if_sorted())
+for i in range(numberOfTests):
+    print("Acesta este testul", i)
 
-sorterObject.radix_sort(0)
-print(sorterObject.verify_if_sorted())
+    vec = sorterObject.copy_input(i)
+    sorterObject.expected_sort(vec)
+    print(vec)
 
-#vec = [123, 31, 2372, 7, 14, 91, 174]
-#print(sorterObject.partition(vec, 0, len(vec) - 1))
+    vec = sorterObject.copy_input(i)
+    sorterObject.count_sort(vec, i)
+    print(sorterObject.verify_if_sorted(vec))
 
-sorterObject.quick_sort(0)
-print(sorterObject.verify_if_sorted())
+    vec = sorterObject.copy_input(i)
+    sorterObject.merge_sort(vec)
+    print(sorterObject.verify_if_sorted(vec))
 
-#print(sorterObject.quick_sort(sorterObject.input[0]))
+    vec = sorterObject.copy_input(i)
+    sorterObject.radix_sort(vec, i, 256)
+    print(sorterObject.verify_if_sorted(vec))
 
-#sorterObject.bubble_sort(0)
-#print(sorterObject.verify_if_sorted())
-#print(sorterObject.get_digit_number(1))
-
-#print(sorterObject.get_digit(5813, 0))
+    vec = sorterObject.copy_input(i)
+    sorterObject.quick_sort(vec, i)
+    print(sorterObject.verify_if_sorted(vec))
