@@ -53,23 +53,27 @@ class Sorter:
         else:
             maximNum = self.inputProperties[index][1]
 
-        frequency = [0 for i in range(maximNum + 1)]
+        if maximNum < 1000000000:
+            frequency = [0 for i in range(maximNum + 1)]
 
-        tstart = time.perf_counter_ns()
+            tstart = time.perf_counter_ns()
 
-        for elem in array:
-            frequency[elem] += 1
+            for elem in array:
+                frequency[elem] += 1
 
-        counter = 0
-        for i in range(maximNum + 1):
-            while frequency[i]:
-                array[counter] = i
-                counter += 1
-                frequency[i] -= 1
+            counter = 0
+            for i in range(maximNum + 1):
+                while frequency[i]:
+                    array[counter] = i
+                    counter += 1
+                    frequency[i] -= 1
 
-        tend = time.perf_counter_ns()
-        print("Count sort done in:", float((tend - tstart) / 1000000), "miliseconds")
-        return array
+            tend = time.perf_counter_ns()
+            print("Count sort done in:", float((tend - tstart) / 1000000), "miliseconds")
+            return array
+        else:
+            print("Count sort can't be done")
+            #return []
 
     def get_digit_number(self, n, base=10):
         cnt = 0
